@@ -1,0 +1,56 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+
+# Generate synthetic data
+X, y = datasets.make_moons(noise=0.1, random_state=42)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Define the parameter values to test
+C_values = [0.1, 1, 0.001] #change values as nedded
+gamma_values = ['scale', 'scale', 'scale'] # change values as nedded
+models = []
+
+# Create SVM models for each combination of C and GAMMA
+for C in C_values:
+    for gamma in gamma_values:
+        clf = SVC(kernel='rbf', C=C, gamma=gamma)
+        clf.fit(X_scaled, y)
+        models.append((C, gamma, clf))
+
+# Function to plot decision boundaries
+def make_meshgrid(x, y, h=.02):
+    x_min, x_max = x.min() - 1, x.max() + 1
+    y_min, y_max = y.min() - 1, y.max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    return xx, yy
+
+def plot_contours(ax, clf, xx, yy, **params):
+    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    out = ax.contourf(xx, yy, Z, **params)
+    return out
+
+# Set up plot
+fig, sub = plt.subplots(len(C_values), len(gamma_values), figsize=(15, 12))
+plt.subplots_adjust(wspace=0.4, hspace=0.4)
+
+X0, X1 = X_scaled[:, 0], X_scaled[:, 1]
+xx, yy = make_meshgrid(X0, X1)
+
+# Draw plots
+for (C, gamma, clf), ax in zip(models, sub.flatten()):
+    plot_contours(ax, clf, xx, yy, cmap=plt.cm.coolwarm, alpha=0.8)
+    ax.scatter(X0, X1, c=y, cmap=plt.cm.coolwarm, s=20, edgecolors='k')
+    ax.set_xlim(xx.min(), xx.max())
+    ax.set_ylim(yy.min(), yy.max())
+    ax.set_xlabel('Feature 1')
+    ax.set_ylabel('Feature 2')
+    ax.set_xticks(())
+    ax.set_yticks(())
+    ax.set_title(f'C={C}, gamma={gamma}')
+
+plt.show()
